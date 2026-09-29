@@ -28,16 +28,29 @@ const PORT = Number(process.env.PORT || 3000);
 const MC_HOST = process.env.MC_HOST;
 const MC_PORT = Number(process.env.MC_PORT || 25565);
 const MC_USERNAME = process.env.MC_USERNAME;
-const MC_PASSWORD = process.env.MC_PASSWORD || undefined;
-const MC_AUTH = process.env.MC_AUTH || undefined;
 
-const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+const MC_PASSWORD =
+  process.env.MC_PASSWORD || undefined;
+
+const MC_AUTH =
+  process.env.MC_AUTH || undefined;
+
+// Minecraft sunucu giriş şifresi.
+// Render Environment Variable olarak ayarlanmalıdır.
+const MC_LOGIN_PASSWORD =
+  process.env.MC_LOGIN_PASSWORD || "";
+
+const DISCORD_TOKEN =
+  process.env.DISCORD_TOKEN;
 
 const OWNER_DISCORD_ID =
-  process.env.OWNER_DISCORD_ID || "1025116253217640609";
+  process.env.OWNER_DISCORD_ID ||
+  "1025116253217640609";
 
 const OWNER_MC_NAME =
-  process.env.OWNER_MC_NAME || "winmaster33";
+  process.env.OWNER_MC_NAME ||
+  "winmaster33";
+
 
 // ============================================================
 // EXPRESS + SOCKET.IO
@@ -45,28 +58,42 @@ const OWNER_MC_NAME =
 
 const app = express();
 
-const server = http.createServer(app);
+const server =
+  http.createServer(app);
 
-const io = new SocketIO(server, {
-  cors: {
-    origin: "*"
-  }
-});
+const io =
+  new SocketIO(server, {
+    cors: {
+      origin: "*"
+    }
+  });
 
 app.use(express.json());
-app.use(express.static("public"));
+
+app.use(
+  express.static("public")
+);
+
 
 // ============================================================
 // STATUS
 // ============================================================
 
-const startedAt = Date.now();
+const startedAt =
+  Date.now();
 
 const status = {
   minecraft: {
     online: false,
-    username: MC_USERNAME || "Unknown",
-    host: MC_HOST || "Unknown",
+
+    username:
+      MC_USERNAME ||
+      "Unknown",
+
+    host:
+      MC_HOST ||
+      "Unknown",
+
     port: MC_PORT,
 
     ping: null,
@@ -113,25 +140,42 @@ const status = {
   chat: []
 };
 
+
 // ============================================================
 // LOG
 // ============================================================
 
-function addLog(message, type = "info") {
+function addLog(
+  message,
+  type = "info"
+) {
   const entry = {
-    time: new Date().toISOString(),
+    time:
+      new Date().toISOString(),
+
     type: type,
-    message: String(message)
+
+    message:
+      String(message)
   };
 
   status.logs.push(entry);
 
-  if (status.logs.length > 150) {
+  if (
+    status.logs.length > 150
+  ) {
     status.logs.shift();
   }
 
-  io.emit("log", entry);
-  io.emit("status", getPublicStatus());
+  io.emit(
+    "log",
+    entry
+  );
+
+  io.emit(
+    "status",
+    getPublicStatus()
+  );
 
   console.log(
     "[" +
@@ -141,26 +185,49 @@ function addLog(message, type = "info") {
   );
 }
 
+
 // ============================================================
 // CHAT
 // ============================================================
 
-function addChat(username, message, type = "minecraft") {
+function addChat(
+  username,
+  message,
+  type = "minecraft"
+) {
   const entry = {
-    time: new Date().toISOString(),
-    username: String(username || "Unknown"),
-    message: String(message || ""),
+    time:
+      new Date().toISOString(),
+
+    username:
+      String(
+        username ||
+          "Unknown"
+      ),
+
+    message:
+      String(
+        message ||
+          ""
+      ),
+
     type: type
   };
 
   status.chat.push(entry);
 
-  if (status.chat.length > 150) {
+  if (
+    status.chat.length > 150
+  ) {
     status.chat.shift();
   }
 
-  io.emit("chat", entry);
+  io.emit(
+    "chat",
+    entry
+  );
 }
+
 
 // ============================================================
 // PUBLIC STATUS
@@ -184,56 +251,77 @@ function getPublicStatus() {
       ...status.equipment
     },
 
-    logs: [...status.logs],
+    logs: [
+      ...status.logs
+    ],
 
-    chat: [...status.chat],
+    chat: [
+      ...status.chat
+    ],
 
-    uptime: Date.now() - startedAt,
+    uptime:
+      Date.now() -
+      startedAt,
 
-    serverTime: Date.now()
+    serverTime:
+      Date.now()
   };
 }
 
+
 function broadcastStatus() {
-  io.emit("status", getPublicStatus());
+  io.emit(
+    "status",
+    getPublicStatus()
+  );
 }
+
 
 // ============================================================
 // DISCORD
 // ============================================================
 
-const discordClient = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.MessageContent
-  ],
+const discordClient =
+  new Client({
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.DirectMessages,
+      GatewayIntentBits.MessageContent
+    ],
 
-  partials: [
-    Partials.Channel
-  ]
-});
+    partials: [
+      Partials.Channel
+    ]
+  });
+
 
 // ============================================================
 // DISCORD DM
 // ============================================================
 
-async function sendOwnerDM(message) {
+async function sendOwnerDM(
+  message
+) {
   try {
-    if (!discordClient.isReady()) {
+    if (
+      !discordClient.isReady()
+    ) {
       return;
     }
 
-    const user = await discordClient.users.fetch(
-      OWNER_DISCORD_ID
-    );
+    const user =
+      await discordClient.users.fetch(
+        OWNER_DISCORD_ID
+      );
 
     if (!user) {
       return;
     }
 
-    await user.send(String(message));
+    await user.send(
+      String(message)
+    );
   } catch (error) {
     addLog(
       "Discord DM gönderilemedi: " +
@@ -243,101 +331,142 @@ async function sendOwnerDM(message) {
   }
 }
 
+
 // ============================================================
 // DISCORD READY
 // ============================================================
 
-discordClient.once("ready", () => {
-  status.discord.online = true;
+discordClient.once(
+  "ready",
+  () => {
+    status.discord.online =
+      true;
 
-  status.discord.username =
-    discordClient.user.username;
+    status.discord.username =
+      discordClient.user.username;
 
-  status.discord.tag =
-    discordClient.user.tag;
+    status.discord.tag =
+      discordClient.user.tag;
 
-  status.discord.id =
-    discordClient.user.id;
+    status.discord.id =
+      discordClient.user.id;
 
-  status.discord.connectedAt =
-    new Date().toISOString();
+    status.discord.connectedAt =
+      new Date().toISOString();
 
-  addLog(
-    "Discord bağlantısı aktif: " +
-      discordClient.user.tag,
-    "success"
-  );
+    addLog(
+      "Discord bağlantısı aktif: " +
+        discordClient.user.tag,
+      "success"
+    );
 
-  broadcastStatus();
-});
+    broadcastStatus();
+  }
+);
+
 
 // ============================================================
 // DISCORD ERROR
 // ============================================================
 
-discordClient.on("error", (error) => {
-  addLog(
-    "Discord hatası: " +
-      error.message,
-    "error"
-  );
-});
+discordClient.on(
+  "error",
+  (error) => {
+    addLog(
+      "Discord hatası: " +
+        error.message,
+      "error"
+    );
+  }
+);
+
 
 // ============================================================
 // DISCORD DISCONNECT
 // ============================================================
 
-discordClient.on("shardDisconnect", () => {
-  status.discord.online = false;
+discordClient.on(
+  "shardDisconnect",
+  () => {
+    status.discord.online =
+      false;
 
-  addLog(
-    "Discord bağlantısı kesildi.",
-    "warning"
-  );
+    addLog(
+      "Discord bağlantısı kesildi.",
+      "warning"
+    );
 
-  broadcastStatus();
-});
+    broadcastStatus();
+  }
+);
+
 
 // ============================================================
 // DISCORD MESSAGE
 // ============================================================
 
-discordClient.on("messageCreate", async (message) => {
-  if (message.author.bot) {
-    return;
-  }
-
-  if (message.author.id !== OWNER_DISCORD_ID) {
-    return;
-  }
-
-  if (!message.guild) {
-    const text =
-      message.content.trim();
-
-    if (!text) {
-      return;
-    }
-
-    if (text.startsWith("/")) {
-      handleMinecraftCommand(text);
+discordClient.on(
+  "messageCreate",
+  async (message) => {
+    if (
+      message.author.bot
+    ) {
       return;
     }
 
     if (
-      mcBot &&
-      status.minecraft.online
+      message.author.id !==
+      OWNER_DISCORD_ID
     ) {
-      mcBot.chat(text);
+      return;
+    }
 
-      addLog(
-        "Discord -> Minecraft: " +
-          text,
-        "chat"
-      );
+    if (
+      !message.guild
+    ) {
+      const text =
+        message.content.trim();
+
+      if (!text) {
+        return;
+      }
+
+      // Slash komutları botun kontrol komutlarına
+      // veya Minecraft'a yönlendirilir.
+      if (
+        text.startsWith("/")
+      ) {
+        handleMinecraftCommand(
+          text
+        );
+
+        return;
+      }
+
+      // Login/spawn öncesinde de Minecraft
+      // komutu gönderebilmek için yalnızca
+      // status.minecraft.online kontrol edilmiyor.
+      if (mcBot) {
+        try {
+          mcBot.chat(text);
+
+          addLog(
+            "Discord -> Minecraft: " +
+              text,
+            "chat"
+          );
+        } catch (error) {
+          addLog(
+            "Discord -> Minecraft gönderilemedi: " +
+              error.message,
+            "error"
+          );
+        }
+      }
     }
   }
-});
+);
+
 
 // ============================================================
 // MINECRAFT
@@ -357,11 +486,64 @@ let mcMovements = null;
 
 let lastAttackTime = 0;
 
+let loginCommandSent = false;
+
+
+// ============================================================
+// SEND AUTOMATIC LOGIN
+// ============================================================
+
+function sendAutomaticLogin(
+  reason = "otomatik giriş"
+) {
+  if (!mcBot) {
+    return;
+  }
+
+  if (
+    !MC_LOGIN_PASSWORD
+  ) {
+    addLog(
+      "MC_LOGIN_PASSWORD bulunamadı; otomatik /gir yapılamıyor.",
+      "warning"
+    );
+
+    return;
+  }
+
+  try {
+    mcBot.chat(
+      "/gir " +
+        MC_LOGIN_PASSWORD
+    );
+
+    loginCommandSent =
+      true;
+
+    addLog(
+      "Minecraft /gir komutu gönderildi (" +
+        reason +
+        ").",
+      "success"
+    );
+  } catch (error) {
+    addLog(
+      "Otomatik /gir gönderilemedi: " +
+        error.message,
+      "error"
+    );
+  }
+}
+
+
 // ============================================================
 // CREATE MINECRAFT BOT
 // ============================================================
 
 function createMinecraftBot() {
+  loginCommandSent =
+    false;
+
   if (!MC_HOST) {
     addLog(
       "MC_HOST environment variable eksik.",
@@ -401,15 +583,20 @@ function createMinecraftBot() {
   };
 
   if (MC_PASSWORD) {
-    options.password = MC_PASSWORD;
+    options.password =
+      MC_PASSWORD;
   }
 
   if (MC_AUTH) {
-    options.auth = MC_AUTH;
+    options.auth =
+      MC_AUTH;
   }
 
   try {
-    mcBot = mineflayer.createBot(options);
+    mcBot =
+      mineflayer.createBot(
+        options
+      );
   } catch (error) {
     addLog(
       "Minecraft botu oluşturulamadı: " +
@@ -422,10 +609,13 @@ function createMinecraftBot() {
     return;
   }
 
-  mcBot.loadPlugin(pathfinder);
+  mcBot.loadPlugin(
+    pathfinder
+  );
 
   setupMinecraftEvents();
 }
+
 
 // ============================================================
 // MINECRAFT EVENTS
@@ -436,269 +626,402 @@ function setupMinecraftEvents() {
     return;
   }
 
-  // ----------------------------------------------------------
-  // SPAWN
-  // ----------------------------------------------------------
-
-  mcBot.once("spawn", () => {
-    status.minecraft.online = true;
-
-    status.minecraft.connectedAt =
-      new Date().toISOString();
-
-    try {
-      mcMovements =
-        new Movements(mcBot);
-
-      mcBot.pathfinder.setMovements(
-        mcMovements
-      );
-    } catch (error) {
-      addLog(
-        "Pathfinder hazırlanamadı: " +
-          error.message,
-        "error"
-      );
-    }
-
-    addLog(
-      "Minecraft bağlantısı kuruldu: " +
-        mcBot.username,
-      "success"
-    );
-
-    sendOwnerDM(
-      "Minecraft botu sunucuya bağlandı.\n" +
-        "Sunucu: " +
-        MC_HOST +
-        ":" +
-        MC_PORT
-    );
-
-    broadcastStatus();
-  });
 
   // ----------------------------------------------------------
   // LOGIN
   // ----------------------------------------------------------
 
-  mcBot.on("login", () => {
-    addLog(
-      "Minecraft login başarılı.",
-      "success"
-    );
-  });
+  mcBot.on(
+    "login",
+    () => {
+      addLog(
+        "Minecraft login başarılı.",
+        "success"
+      );
+
+      // Sunucuya protokol bağlantısı tamamlandı.
+      // Henüz spawn olmadan da /gir gönderebiliriz.
+      setTimeout(() => {
+        if (
+          !mcBot ||
+          loginCommandSent
+        ) {
+          return;
+        }
+
+        sendAutomaticLogin(
+          "login sonrası"
+        );
+      }, 1500);
+    }
+  );
+
+
+  // ----------------------------------------------------------
+  // SPAWN
+  // ----------------------------------------------------------
+
+  mcBot.once(
+    "spawn",
+    () => {
+      status.minecraft.online =
+        true;
+
+      status.minecraft.connectedAt =
+        new Date().toISOString();
+
+      try {
+        mcMovements =
+          new Movements(
+            mcBot
+          );
+
+        mcBot.pathfinder.setMovements(
+          mcMovements
+        );
+      } catch (error) {
+        addLog(
+          "Pathfinder hazırlanamadı: " +
+            error.message,
+          "error"
+        );
+      }
+
+      addLog(
+        "Minecraft bağlantısı kuruldu: " +
+          mcBot.username,
+        "success"
+      );
+
+      sendOwnerDM(
+        "Minecraft botu sunucuya bağlandı.\n" +
+          "Sunucu: " +
+          MC_HOST +
+          ":" +
+          MC_PORT
+      );
+
+      broadcastStatus();
+    }
+  );
+
 
   // ----------------------------------------------------------
   // END
   // ----------------------------------------------------------
 
-  mcBot.on("end", (reason) => {
-    status.minecraft.online = false;
+  mcBot.on(
+    "end",
+    (reason) => {
+      status.minecraft.online =
+        false;
 
-    status.minecraft.lastDisconnect =
-      new Date().toISOString();
+      status.minecraft.lastDisconnect =
+        new Date().toISOString();
 
-    status.minecraft.target = null;
-    status.minecraft.targetDistance = null;
-    status.minecraft.attacking = false;
+      status.minecraft.target =
+        null;
 
-    currentTarget = null;
+      status.minecraft.targetDistance =
+        null;
 
-    addLog(
-      "Minecraft bağlantısı kesildi: " +
-        (reason || "bilinmiyor"),
-      "warning"
-    );
+      status.minecraft.attacking =
+        false;
 
-    sendOwnerDM(
-      "Minecraft botunun bağlantısı kesildi.\n" +
-        "Sebep: " +
-        (reason || "bilinmiyor")
-    );
+      currentTarget =
+        null;
 
-    broadcastStatus();
+      loginCommandSent =
+        false;
 
-    scheduleReconnect();
-  });
+      addLog(
+        "Minecraft bağlantısı kesildi: " +
+          (
+            reason ||
+            "bilinmiyor"
+          ),
+        "warning"
+      );
+
+      sendOwnerDM(
+        "Minecraft botunun bağlantısı kesildi.\n" +
+          "Sebep: " +
+          (
+            reason ||
+            "bilinmiyor"
+          )
+      );
+
+      broadcastStatus();
+
+      scheduleReconnect();
+    }
+  );
+
 
   // ----------------------------------------------------------
   // KICK
   // ----------------------------------------------------------
 
-mcBot.on("kicked", (reason) => {
-  let kickReason = "";
+  mcBot.on(
+    "kicked",
+    (reason) => {
+      let kickReason =
+        "";
 
-  try {
-    if (typeof reason === "string") {
-      kickReason = reason;
-    } else {
-      kickReason = JSON.stringify(
-        reason,
-        null,
-        2
+      try {
+        if (
+          typeof reason ===
+          "string"
+        ) {
+          kickReason =
+            reason;
+        } else {
+          kickReason =
+            JSON.stringify(
+              reason,
+              null,
+              2
+            );
+        }
+      } catch {
+        kickReason =
+          String(reason);
+      }
+
+      addLog(
+        "Minecraft botu sunucudan atıldı. Sebep: " +
+          kickReason,
+        "error"
+      );
+
+      sendOwnerDM(
+        "Minecraft botu sunucudan atıldı.\n\n" +
+          "Sebep:\n" +
+          kickReason
       );
     }
-  } catch {
-    kickReason = String(reason);
-  }
-
-  addLog(
-    "Minecraft botu sunucudan atıldı. Sebep: " +
-      kickReason,
-    "error"
   );
 
-  sendOwnerDM(
-    "Minecraft botu sunucudan atıldı.\n\n" +
-      "Sebep:\n" +
-      kickReason
-  );
-});
 
   // ----------------------------------------------------------
   // ERROR
   // ----------------------------------------------------------
 
-  mcBot.on("error", (error) => {
-    addLog(
-      "Minecraft hatası: " +
-        error.message,
-      "error"
-    );
-  });
+  mcBot.on(
+    "error",
+    (error) => {
+      addLog(
+        "Minecraft hatası: " +
+          error.message,
+        "error"
+      );
+    }
+  );
+
 
   // ----------------------------------------------------------
   // CHAT
   // ----------------------------------------------------------
 
-  mcBot.on("chat", (username, message) => {
-    addChat(
-      username,
-      message,
-      "minecraft"
-    );
-
-    addLog(
-      username +
-        ": " +
+  mcBot.on(
+    "chat",
+    (username, message) => {
+      addChat(
+        username,
         message,
-      "chat"
-    );
+        "minecraft"
+      );
 
-    sendOwnerDM(
-      "Minecraft | " +
+      addLog(
         username +
-        ": " +
-        message
-    );
+          ": " +
+          message,
+        "chat"
+      );
 
-    if (
-      username.toLowerCase() ===
-      OWNER_MC_NAME.toLowerCase()
-    ) {
+      sendOwnerDM(
+        "Minecraft | " +
+          username +
+          ": " +
+          message
+      );
+
       if (
-        String(message).startsWith("/")
+        username.toLowerCase() ===
+        OWNER_MC_NAME.toLowerCase()
       ) {
-        handleMinecraftCommand(message);
-      } else {
-        handleMinecraftCommand(message);
+        handleMinecraftCommand(
+          message
+        );
       }
     }
-  });
+  );
+
 
   // ----------------------------------------------------------
   // SYSTEM MESSAGE
   // ----------------------------------------------------------
 
-mcBot.on("message", (jsonMsg) => {
-  try {
-    const text = jsonMsg.toString();
+  mcBot.on(
+    "message",
+    (jsonMsg) => {
+      try {
+        const text =
+          jsonMsg.toString();
 
-    if (!text) {
-      return;
+        if (!text) {
+          return;
+        }
+
+        addLog(
+          "Minecraft sistem mesajı: " +
+            text,
+          "system"
+        );
+
+        sendOwnerDM(
+          "Minecraft sistem mesajı:\n" +
+            text
+        );
+
+        const lower =
+          text.toLowerCase();
+
+        // Sunucu giriş istediğinde otomatik
+        // /gir gönder.
+        if (
+          MC_LOGIN_PASSWORD &&
+          !loginCommandSent &&
+          (
+            lower.includes(
+              "giriş"
+            ) ||
+            lower.includes(
+              "giris"
+            ) ||
+            lower.includes(
+              "login"
+            )
+          )
+        ) {
+          setTimeout(() => {
+            if (
+              !mcBot ||
+              loginCommandSent
+            ) {
+              return;
+            }
+
+            sendAutomaticLogin(
+              "giriş mesajı algılandı"
+            );
+          }, 500);
+        }
+      } catch (error) {
+        addLog(
+          "Minecraft mesajı okunamadı: " +
+            error.message,
+          "error"
+        );
+      }
     }
+  );
 
-    addLog(
-      "Minecraft sistem mesajı: " +
-        text,
-      "system"
-    );
-
-    sendOwnerDM(
-      "Minecraft sistem mesajı:\n" +
-        text
-    );
-  } catch (error) {
-    addLog(
-      "Minecraft mesajı okunamadı: " +
-        error.message,
-      "error"
-    );
-  }
-});
 
   // ----------------------------------------------------------
   // HEALTH
   // ----------------------------------------------------------
 
-  mcBot.on("health", () => {
-    updateMinecraftStatus();
-  });
+  mcBot.on(
+    "health",
+    () => {
+      updateMinecraftStatus();
+    }
+  );
+
 
   // ----------------------------------------------------------
   // PHYSICS
   // ----------------------------------------------------------
 
-  mcBot.on("physicsTick", () => {
-    updateMinecraftStatus();
-  });
+  mcBot.on(
+    "physicsTick",
+    () => {
+      updateMinecraftStatus();
+    }
+  );
+
 
   // ----------------------------------------------------------
   // ENTITY GONE
   // ----------------------------------------------------------
 
-  mcBot.on("entityGone", (entity) => {
-    if (
-      currentTarget &&
-      entity.id === currentTarget.id
-    ) {
-      currentTarget = null;
+  mcBot.on(
+    "entityGone",
+    (entity) => {
+      if (
+        currentTarget &&
+        entity.id ===
+          currentTarget.id
+      ) {
+        currentTarget =
+          null;
 
-      status.minecraft.target = null;
-      status.minecraft.targetDistance = null;
-      status.minecraft.attacking = false;
+        status.minecraft.target =
+          null;
 
-      broadcastStatus();
+        status.minecraft.targetDistance =
+          null;
+
+        status.minecraft.attacking =
+          false;
+
+        broadcastStatus();
+      }
     }
-  });
+  );
+
 
   // ----------------------------------------------------------
   // WINDOW
   // ----------------------------------------------------------
 
-  mcBot.on("windowOpen", (window) => {
-    handleTeleportWindow(window);
-  });
+  mcBot.on(
+    "windowOpen",
+    (window) => {
+      handleTeleportWindow(
+        window
+      );
+    }
+  );
 }
+
 
 // ============================================================
 // RECONNECT
 // ============================================================
 
 function scheduleReconnect() {
-  if (reconnectTimer) {
+  if (
+    reconnectTimer
+  ) {
     return;
   }
 
-  reconnectTimer = setTimeout(() => {
-    reconnectTimer = null;
+  reconnectTimer =
+    setTimeout(() => {
+      reconnectTimer =
+        null;
 
-    if (!status.minecraft.online) {
-      createMinecraftBot();
-    }
-  }, 10000);
+      if (
+        !status.minecraft.online
+      ) {
+        createMinecraftBot();
+      }
+    }, 10000);
 }
+
 
 // ============================================================
 // UPDATE MINECRAFT STATUS
@@ -714,14 +1037,16 @@ function updateMinecraftStatus() {
 
   if (
     mcBot.player &&
-    typeof mcBot.player.ping === "number"
+    typeof mcBot.player.ping ===
+      "number"
   ) {
     status.minecraft.ping =
       mcBot.player.ping;
   }
 
   if (
-    typeof mcBot.health === "number"
+    typeof mcBot.health ===
+      "number"
   ) {
     status.minecraft.health =
       Math.round(
@@ -730,7 +1055,8 @@ function updateMinecraftStatus() {
   }
 
   if (
-    typeof mcBot.food === "number"
+    typeof mcBot.food ===
+      "number"
   ) {
     status.minecraft.food =
       Math.round(
@@ -744,17 +1070,20 @@ function updateMinecraftStatus() {
   ) {
     status.minecraft.x =
       Math.round(
-        mcBot.entity.position.x * 10
+        mcBot.entity.position.x *
+          10
       ) / 10;
 
     status.minecraft.y =
       Math.round(
-        mcBot.entity.position.y * 10
+        mcBot.entity.position.y *
+          10
       ) / 10;
 
     status.minecraft.z =
       Math.round(
-        mcBot.entity.position.z * 10
+        mcBot.entity.position.z *
+          10
       ) / 10;
   }
 
@@ -779,6 +1108,7 @@ function updateMinecraftStatus() {
   broadcastStatus();
 }
 
+
 // ============================================================
 // TARGET STATUS
 // ============================================================
@@ -789,13 +1119,18 @@ function updateTargetStatus() {
     !mcBot ||
     !mcBot.entity
   ) {
-    status.minecraft.target = null;
-    status.minecraft.targetDistance = null;
+    status.minecraft.target =
+      null;
+
+    status.minecraft.targetDistance =
+      null;
 
     return;
   }
 
-  if (!currentTarget.position) {
+  if (
+    !currentTarget.position
+  ) {
     return;
   }
 
@@ -805,7 +1140,9 @@ function updateTargetStatus() {
     );
 
   status.minecraft.targetDistance =
-    Math.round(distance * 10) / 10;
+    Math.round(
+      distance * 10
+    ) / 10;
 
   status.minecraft.target =
     getEntityDisplayName(
@@ -813,17 +1150,21 @@ function updateTargetStatus() {
     );
 }
 
+
 // ============================================================
 // ENTITY NAME
 // ============================================================
 
-function getEntityDisplayName(entity) {
+function getEntityDisplayName(
+  entity
+) {
   if (!entity) {
     return null;
   }
 
   if (
-    entity.name === "zombie" &&
+    entity.name ===
+      "zombie" &&
     entity.isBaby === true
   ) {
     return "Baby Zombie";
@@ -831,7 +1172,7 @@ function getEntityDisplayName(entity) {
 
   if (
     entity.name ===
-    "wither_skeleton"
+      "wither_skeleton"
   ) {
     return "Wither Skeleton";
   }
@@ -842,11 +1183,14 @@ function getEntityDisplayName(entity) {
   );
 }
 
+
 // ============================================================
 // EQUIPMENT
 // ============================================================
 
-function getDurabilityInfo(item) {
+function getDurabilityInfo(
+  item
+) {
   if (!item) {
     return null;
   }
@@ -891,13 +1235,15 @@ function getDurabilityInfo(item) {
           (
             result.durability /
             item.maxDurability
-          ) * 100
+          ) *
+            100
         );
     }
   }
 
   return result;
 }
+
 
 function updateEquipment() {
   if (!mcBot) {
@@ -940,35 +1286,38 @@ function updateEquipment() {
     );
 }
 
+
 // ============================================================
 // BABY ZOMBIE
 // ============================================================
 
-function isBabyZombie(entity) {
+function isBabyZombie(
+  entity
+) {
   if (!entity) {
     return false;
   }
 
   if (
-    entity.name !== "zombie"
+    entity.name !==
+    "zombie"
   ) {
     return false;
   }
 
-  if (
+  return (
     entity.isBaby === true
-  ) {
-    return true;
-  }
-
-  return false;
+  );
 }
+
 
 // ============================================================
 // ALLOWED TARGET
 // ============================================================
 
-function isAllowedTarget(entity) {
+function isAllowedTarget(
+  entity
+) {
   if (!entity) {
     return false;
   }
@@ -989,6 +1338,7 @@ function isAllowedTarget(entity) {
   return false;
 }
 
+
 // ============================================================
 // FIND TARGET
 // ============================================================
@@ -1007,70 +1357,83 @@ function findTarget() {
     );
 
   const valid =
-    entities.filter((entity) => {
-      if (
-        !isAllowedTarget(entity)
-      ) {
-        return false;
-      }
+    entities.filter(
+      (entity) => {
+        if (
+          !isAllowedTarget(
+            entity
+          )
+        ) {
+          return false;
+        }
 
-      if (!entity.position) {
-        return false;
-      }
+        if (
+          !entity.position
+        ) {
+          return false;
+        }
 
-      const distance =
-        mcBot.entity.position.distanceTo(
-          entity.position
+        const distance =
+          mcBot.entity.position.distanceTo(
+            entity.position
+          );
+
+        return (
+          distance <= 32
         );
+      }
+    );
 
-      return distance <= 32;
-    });
-
-  if (!valid.length) {
+  if (
+    !valid.length
+  ) {
     return null;
   }
 
-  valid.sort((a, b) => {
-    const aPriority =
-      a.name ===
-      "wither_skeleton"
-        ? 0
-        : 1;
+  valid.sort(
+    (a, b) => {
+      const aPriority =
+        a.name ===
+        "wither_skeleton"
+          ? 0
+          : 1;
 
-    const bPriority =
-      b.name ===
-      "wither_skeleton"
-        ? 0
-        : 1;
+      const bPriority =
+        b.name ===
+        "wither_skeleton"
+          ? 0
+          : 1;
 
-    if (
-      aPriority !==
-      bPriority
-    ) {
-      return (
-        aPriority -
+      if (
+        aPriority !==
         bPriority
+      ) {
+        return (
+          aPriority -
+          bPriority
+        );
+      }
+
+      const aDistance =
+        mcBot.entity.position.distanceTo(
+          a.position
+        );
+
+      const bDistance =
+        mcBot.entity.position.distanceTo(
+          b.position
+        );
+
+      return (
+        aDistance -
+        bDistance
       );
     }
-
-    const aDistance =
-      mcBot.entity.position.distanceTo(
-        a.position
-      );
-
-    const bDistance =
-      mcBot.entity.position.distanceTo(
-        b.position
-      );
-
-    return (
-      aDistance -
-      bDistance
-    );
-  });
+  );
 
   return valid[0];
 }
+
 
 // ============================================================
 // PVE LOOP
@@ -1084,12 +1447,20 @@ setInterval(() => {
     return;
   }
 
-  if (!attackEnabled) {
-    currentTarget = null;
+  if (
+    !attackEnabled
+  ) {
+    currentTarget =
+      null;
 
-    status.minecraft.target = null;
-    status.minecraft.targetDistance = null;
-    status.minecraft.attacking = false;
+    status.minecraft.target =
+      null;
+
+    status.minecraft.targetDistance =
+      null;
+
+    status.minecraft.attacking =
+      false;
 
     return;
   }
@@ -1098,16 +1469,23 @@ setInterval(() => {
     findTarget();
 
   if (!target) {
-    currentTarget = null;
+    currentTarget =
+      null;
 
-    status.minecraft.target = null;
-    status.minecraft.targetDistance = null;
-    status.minecraft.attacking = false;
+    status.minecraft.target =
+      null;
+
+    status.minecraft.targetDistance =
+      null;
+
+    status.minecraft.attacking =
+      false;
 
     return;
   }
 
-  currentTarget = target;
+  currentTarget =
+    target;
 
   updateTargetStatus();
 
@@ -1119,7 +1497,9 @@ setInterval(() => {
   status.minecraft.attacking =
     true;
 
-  if (movementEnabled) {
+  if (
+    movementEnabled
+  ) {
     try {
       mcBot.pathfinder.setGoal(
         new GoalNear(
@@ -1132,14 +1512,19 @@ setInterval(() => {
     } catch {}
   }
 
-  if (distance <= 3.2) {
-    const now = Date.now();
+  if (
+    distance <= 3.2
+  ) {
+    const now =
+      Date.now();
 
     if (
-      now - lastAttackTime >=
+      now -
+        lastAttackTime >=
       650
     ) {
-      lastAttackTime = now;
+      lastAttackTime =
+        now;
 
       try {
         mcBot
@@ -1147,9 +1532,13 @@ setInterval(() => {
             target.position,
             true
           )
-          .catch(() => {});
+          .catch(
+            () => {}
+          );
 
-        mcBot.attack(target);
+        mcBot.attack(
+          target
+        );
       } catch (error) {
         addLog(
           "Saldırı hatası: " +
@@ -1162,6 +1551,7 @@ setInterval(() => {
 
   broadcastStatus();
 }, 300);
+
 
 // ============================================================
 // TELEPORT GUI
@@ -1181,22 +1571,32 @@ function itemText(item) {
   }
 }
 
-function handleTeleportWindow(window) {
+
+function handleTeleportWindow(
+  window
+) {
   if (!window) {
     return;
   }
 
   const title =
-    typeof window.title === "string"
+    typeof window.title ===
+      "string"
       ? window.title.toLowerCase()
       : "";
 
   const isTeleportWindow =
-    title.includes("teleport") ||
+    title.includes(
+      "teleport"
+    ) ||
     title.includes("tpa") ||
-    title.includes("request");
+    title.includes(
+      "request"
+    );
 
-  if (!isTeleportWindow) {
+  if (
+    !isTeleportWindow
+  ) {
     return;
   }
 
@@ -1210,8 +1610,11 @@ function handleTeleportWindow(window) {
       const items =
         window.slots || [];
 
-      let acceptSlot = null;
-      let rejectSlot = null;
+      let acceptSlot =
+        null;
+
+      let rejectSlot =
+        null;
 
       for (
         let i = 0;
@@ -1237,29 +1640,42 @@ function handleTeleportWindow(window) {
           name ===
             "lime_stained_glass_pane" ||
           (
-            name.includes("lime") &&
-            text.includes("accept")
+            name.includes(
+              "lime"
+            ) &&
+            text.includes(
+              "accept"
+            )
           )
         ) {
-          acceptSlot = i;
+          acceptSlot =
+            i;
         }
 
         if (
           name ===
             "red_stained_glass_pane" ||
           (
-            name.includes("red") &&
+            name.includes(
+              "red"
+            ) &&
             (
-              text.includes("deny") ||
-              text.includes("reject")
+              text.includes(
+                "deny"
+              ) ||
+              text.includes(
+                "reject"
+              )
             )
           )
         ) {
-          rejectSlot = i;
+          rejectSlot =
+            i;
         }
       }
 
-      let guiText = "";
+      let guiText =
+        "";
 
       try {
         guiText =
@@ -1309,15 +1725,15 @@ function handleTeleportWindow(window) {
   }, 500);
 }
 
+
 // ============================================================
 // MINECRAFT COMMANDS
 // ============================================================
 
-function handleMinecraftCommand(message) {
-  if (
-    !mcBot ||
-    !status.minecraft.online
-  ) {
+function handleMinecraftCommand(
+  message
+) {
+  if (!mcBot) {
     return;
   }
 
@@ -1332,16 +1748,63 @@ function handleMinecraftCommand(message) {
   }
 
   const parts =
-    command.split(/\s+/);
+    command.split(
+      /\s+/
+    );
 
   const cmd =
     parts[0].toLowerCase();
 
+
+  // ----------------------------------------------------------
+  // /GIR
+  // ----------------------------------------------------------
+
+  if (
+    cmd === "gir"
+  ) {
+    if (
+      !MC_LOGIN_PASSWORD
+    ) {
+      addLog(
+        "MC_LOGIN_PASSWORD bulunamadı; /gir gönderilemedi.",
+        "error"
+      );
+
+      sendOwnerDM(
+        "MC_LOGIN_PASSWORD Render Environment Variable olarak ayarlanmamış."
+      );
+
+      return;
+    }
+
+    loginCommandSent =
+      false;
+
+    sendAutomaticLogin(
+      "Discord /gir komutu"
+    );
+
+    return;
+  }
+
+
+  // Diğer kontrol komutları için
+  // botun Minecraft dünyasına spawn olması gerekir.
+  if (
+    !status.minecraft.online
+  ) {
+    return;
+  }
+
+
   switch (cmd) {
+
     case "saldır":
     case "saldir":
 
-      attackEnabled = true;
+      attackEnabled =
+        true;
 
       addLog(
         "PvE saldırı modu açıldı.",
@@ -1350,10 +1813,12 @@ function handleMinecraftCommand(message) {
 
       break;
 
+
     case "saldırma":
     case "saldirma":
 
-      attackEnabled = false;
+      attackEnabled =
+        false;
 
       try {
         mcBot.pathfinder.setGoal(
@@ -1361,7 +1826,8 @@ function handleMinecraftCommand(message) {
         );
       } catch {}
 
-      currentTarget = null;
+      currentTarget =
+        null;
 
       addLog(
         "PvE saldırı modu kapatıldı.",
@@ -1370,11 +1836,15 @@ function handleMinecraftCommand(message) {
 
       break;
 
+
     case "hareketizsaldır":
     case "hareketizsaldir":
 
-      attackEnabled = true;
-      movementEnabled = false;
+      attackEnabled =
+        true;
+
+      movementEnabled =
+        false;
 
       try {
         mcBot.pathfinder.setGoal(
@@ -1389,9 +1859,11 @@ function handleMinecraftCommand(message) {
 
       break;
 
+
     case "hareket":
 
-      movementEnabled = true;
+      movementEnabled =
+        true;
 
       addLog(
         "Hareket modu açıldı.",
@@ -1400,9 +1872,11 @@ function handleMinecraftCommand(message) {
 
       break;
 
+
     case "hareketyok":
 
-      movementEnabled = false;
+      movementEnabled =
+        false;
 
       try {
         mcBot.pathfinder.setGoal(
@@ -1416,6 +1890,7 @@ function handleMinecraftCommand(message) {
       );
 
       break;
+
 
     case "tpme":
 
@@ -1432,6 +1907,7 @@ function handleMinecraftCommand(message) {
 
       break;
 
+
     case "tphere":
 
       mcBot.chat(
@@ -1447,6 +1923,7 @@ function handleMinecraftCommand(message) {
 
       break;
 
+
     case "townspawn":
 
       mcBot.chat(
@@ -1460,6 +1937,7 @@ function handleMinecraftCommand(message) {
 
       break;
 
+
     case "durum":
     case "status":
 
@@ -1468,6 +1946,7 @@ function handleMinecraftCommand(message) {
       );
 
       break;
+
 
     case "yardım":
     case "yardim":
@@ -1484,11 +1963,13 @@ function handleMinecraftCommand(message) {
           "tpme",
           "tphere",
           "townspawn",
+          "gir",
           "durum"
         ].join("\n")
       );
 
       break;
+
 
     default:
 
@@ -1501,6 +1982,7 @@ function handleMinecraftCommand(message) {
       break;
   }
 
+
   status.minecraft.attacking =
     attackEnabled;
 
@@ -1509,6 +1991,7 @@ function handleMinecraftCommand(message) {
 
   broadcastStatus();
 }
+
 
 // ============================================================
 // STATUS MESSAGE
@@ -1524,15 +2007,20 @@ function createStatusMessage() {
   return [
     "MCDCBOT DURUM",
     "",
+
     "Minecraft: " +
-      (m.online
-        ? "ONLINE"
-        : "OFFLINE"),
+      (
+        m.online
+          ? "ONLINE"
+          : "OFFLINE"
+      ),
 
     "Discord: " +
-      (d.online
-        ? "ONLINE"
-        : "OFFLINE"),
+      (
+        d.online
+          ? "ONLINE"
+          : "OFFLINE"
+      ),
 
     "Ping: " +
       (m.ping ?? "?") +
@@ -1555,22 +2043,33 @@ function createStatusMessage() {
       (m.z ?? "?"),
 
     "Hedef: " +
-      (m.target ?? "Yok"),
+      (
+        m.target ||
+        "Yok"
+      ),
 
     "Mesafe: " +
-      (m.targetDistance ?? "?"),
+      (
+        m.targetDistance ??
+        "?"
+      ),
 
     "Saldırı: " +
-      (attackEnabled
-        ? "Açık"
-        : "Kapalı"),
+      (
+        attackEnabled
+          ? "Açık"
+          : "Kapalı"
+      ),
 
     "Hareket: " +
-      (movementEnabled
-        ? "Açık"
-        : "Kapalı")
+      (
+        movementEnabled
+          ? "Açık"
+          : "Kapalı"
+      )
   ].join("\n");
 }
+
 
 // ============================================================
 // WEB API
@@ -1586,6 +2085,7 @@ app.get(
   }
 );
 
+
 app.get(
   "/api/minecraft",
   (req, res) => {
@@ -1594,6 +2094,7 @@ app.get(
     );
   }
 );
+
 
 app.get(
   "/api/discord",
@@ -1604,6 +2105,7 @@ app.get(
   }
 );
 
+
 app.get(
   "/api/logs",
   (req, res) => {
@@ -1613,6 +2115,7 @@ app.get(
   }
 );
 
+
 app.get(
   "/api/chat",
   (req, res) => {
@@ -1621,6 +2124,7 @@ app.get(
     );
   }
 );
+
 
 // ============================================================
 // HEALTH
@@ -1645,38 +2149,50 @@ app.get(
   }
 );
 
+
 // ============================================================
 // SOCKET.IO
 // ============================================================
 
-io.on("connection", (socket) => {
-  addLog(
-    "Web panel bağlandı: " +
-      socket.id,
-    "web"
-  );
-
-  socket.emit(
-    "status",
-    getPublicStatus()
-  );
-
-  socket.on("disconnect", () => {
+io.on(
+  "connection",
+  (socket) => {
     addLog(
-      "Web panel ayrıldı: " +
+      "Web panel bağlandı: " +
         socket.id,
       "web"
     );
-  });
-});
+
+    socket.emit(
+      "status",
+      getPublicStatus()
+    );
+
+    socket.on(
+      "disconnect",
+      () => {
+        addLog(
+          "Web panel ayrıldı: " +
+            socket.id,
+          "web"
+        );
+      }
+    );
+  }
+);
+
 
 // ============================================================
 // STATUS TIMER
 // ============================================================
 
-setInterval(() => {
-  updateMinecraftStatus();
-}, 3000);
+setInterval(
+  () => {
+    updateMinecraftStatus();
+  },
+  3000
+);
+
 
 // ============================================================
 // WEB SERVER
@@ -1699,20 +2215,27 @@ server.listen(
   }
 );
 
+
 // ============================================================
 // DISCORD LOGIN
 // ============================================================
 
-if (DISCORD_TOKEN) {
+if (
+  DISCORD_TOKEN
+) {
   discordClient
-    .login(DISCORD_TOKEN)
-    .catch((error) => {
-      addLog(
-        "Discord login başarısız: " +
-          error.message,
-        "error"
-      );
-    });
+    .login(
+      DISCORD_TOKEN
+    )
+    .catch(
+      (error) => {
+        addLog(
+          "Discord login başarısız: " +
+            error.message,
+          "error"
+        );
+      }
+    );
 } else {
   addLog(
     "DISCORD_TOKEN bulunamadı.",
@@ -1720,11 +2243,13 @@ if (DISCORD_TOKEN) {
   );
 }
 
+
 // ============================================================
 // MINECRAFT START
 // ============================================================
 
 createMinecraftBot();
+
 
 // ============================================================
 // PROCESS ERRORS
@@ -1741,6 +2266,7 @@ process.on(
   }
 );
 
+
 process.on(
   "unhandledRejection",
   (error) => {
@@ -1756,6 +2282,7 @@ process.on(
     );
   }
 );
+
 
 // ============================================================
 // SHUTDOWN
@@ -1779,9 +2306,10 @@ process.on(
       discordClient.destroy();
     } catch {}
 
-    server.close(() => {
-      process.exit(0);
-    });
+    server.close(
+      () => {
+        process.exit(0);
+      }
+    );
   }
 );
-
