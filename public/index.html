@@ -1,0 +1,1699 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>MCDCBOT — Status</title>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #07070b;
+      --panel: rgba(18, 18, 27, 0.82);
+      --panel-2: rgba(24, 24, 36, 0.75);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f5f5f7;
+      --muted: #8d8d9b;
+      --green: #36e58c;
+      --red: #ff5570;
+      --yellow: #ffd166;
+      --blue: #6ea8ff;
+      --purple: #a477ff;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(
+          circle at 10% 10%,
+          rgba(130, 80, 255, 0.16),
+          transparent 30%
+        ),
+        radial-gradient(
+          circle at 90% 20%,
+          rgba(40, 180, 255, 0.10),
+          transparent 28%
+        ),
+        var(--bg);
+
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+      padding: 28px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+
+      background-image:
+        linear-gradient(
+          rgba(255,255,255,0.025) 1px,
+          transparent 1px
+        ),
+        linear-gradient(
+          90deg,
+          rgba(255,255,255,0.025) 1px,
+          transparent 1px
+        );
+
+      background-size: 40px 40px;
+
+      mask-image:
+        linear-gradient(
+          to bottom,
+          black,
+          transparent
+        );
+    }
+
+    .container {
+      width: min(1400px, 100%);
+      margin: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* HEADER */
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 15px;
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(164, 119, 255, 0.25),
+          rgba(80, 160, 255, 0.15)
+        );
+
+      border: 1px solid var(--border);
+
+      font-size: 21px;
+      font-weight: 800;
+    }
+
+    .brand h1 {
+      font-size: 22px;
+      letter-spacing: -0.5px;
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 3px;
+    }
+
+    .connection {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+
+      padding: 10px 14px;
+
+      border-radius: 999px;
+
+      background: rgba(255,255,255,0.045);
+      border: 1px solid var(--border);
+
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--red);
+
+      box-shadow:
+        0 0 12px rgba(255,85,112,0.5);
+    }
+
+    .dot.online {
+      background: var(--green);
+
+      box-shadow:
+        0 0 14px rgba(54,229,140,0.65);
+    }
+
+    /* CARDS */
+
+    .grid {
+      display: grid;
+      grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+      gap: 15px;
+    }
+
+    .card {
+      background: var(--panel);
+
+      border: 1px solid var(--border);
+
+      border-radius: 20px;
+
+      padding: 20px;
+
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+
+      box-shadow:
+        0 20px 50px rgba(0,0,0,0.18);
+    }
+
+    .card-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      margin-bottom: 18px;
+    }
+
+    .card-title h2 {
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .status-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status-label .dot {
+      width: 7px;
+      height: 7px;
+    }
+
+    .big-status {
+      font-size: 26px;
+      font-weight: 750;
+      letter-spacing: -1px;
+    }
+
+    .online-text {
+      color: var(--green);
+    }
+
+    .offline-text {
+      color: var(--red);
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 7px;
+      word-break: break-word;
+    }
+
+    /* MAIN */
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 0.65fr;
+
+      gap: 15px;
+
+      margin-top: 15px;
+    }
+
+    .wide {
+      min-width: 0;
+    }
+
+    /* STATS */
+
+    .stats {
+      display: grid;
+
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+      gap: 10px;
+    }
+
+    .stat {
+      background: var(--panel-2);
+
+      border: 1px solid var(--border);
+
+      border-radius: 14px;
+
+      padding: 14px;
+    }
+
+    .stat-name {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 7px;
+    }
+
+    .stat-value {
+      font-size: 17px;
+      font-weight: 700;
+
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* PROGRESS */
+
+    .progress-row {
+      margin-bottom: 15px;
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+
+      font-size: 12px;
+
+      margin-bottom: 7px;
+    }
+
+    .progress-head span:first-child {
+      color: var(--muted);
+    }
+
+    .progress {
+      height: 7px;
+
+      background: rgba(255,255,255,0.07);
+
+      border-radius: 999px;
+
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+
+      border-radius: inherit;
+
+      transition: width 0.35s ease;
+    }
+
+    .health {
+      background: var(--green);
+    }
+
+    .food {
+      background: var(--yellow);
+    }
+
+    /* EQUIPMENT */
+
+    .equipment {
+      display: grid;
+
+      grid-template-columns:
+        repeat(5, minmax(0, 1fr));
+
+      gap: 9px;
+    }
+
+    .equipment-item {
+      padding: 12px;
+
+      border-radius: 14px;
+
+      background: var(--panel-2);
+
+      border: 1px solid var(--border);
+
+      min-width: 0;
+    }
+
+    .equipment-name {
+      color: var(--muted);
+
+      font-size: 10px;
+
+      margin-bottom: 7px;
+    }
+
+    .equipment-value {
+      font-size: 12px;
+
+      font-weight: 650;
+
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+
+      white-space: nowrap;
+    }
+
+    .equipment-percent {
+      color: var(--muted);
+
+      font-size: 11px;
+
+      margin-top: 4px;
+    }
+
+    /* CHAT / LOG */
+
+    .feed {
+      height: 320px;
+
+      overflow-y: auto;
+
+      padding-right: 5px;
+    }
+
+    .feed::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .feed::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+    }
+
+    .feed-item {
+      padding: 11px 0;
+
+      border-bottom:
+        1px solid rgba(255,255,255,0.05);
+    }
+
+    .feed-item:last-child {
+      border-bottom: 0;
+    }
+
+    .feed-time {
+      color: var(--muted);
+
+      font-size: 10px;
+
+      margin-bottom: 4px;
+    }
+
+    .feed-message {
+      font-size: 12px;
+
+      line-height: 1.5;
+
+      overflow-wrap: anywhere;
+    }
+
+    .feed-user {
+      color: var(--purple);
+      font-weight: 650;
+    }
+
+    .log-info {
+      color: var(--text);
+    }
+
+    .log-success {
+      color: var(--green);
+    }
+
+    .log-warning {
+      color: var(--yellow);
+    }
+
+    .log-error {
+      color: var(--red);
+    }
+
+    /* FOOTER */
+
+    footer {
+      text-align: center;
+
+      color: var(--muted);
+
+      font-size: 11px;
+
+      margin-top: 20px;
+
+      padding-bottom: 5px;
+    }
+
+    /* RESPONSIVE */
+
+    @media (max-width: 1050px) {
+      .grid {
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+      }
+
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 650px) {
+      body {
+        padding: 15px;
+      }
+
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+      }
+
+      .equipment {
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+      }
+
+      .connection {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+
+  <header>
+
+    <div class="brand">
+
+      <div class="logo">
+        MC
+      </div>
+
+      <div>
+        <h1>MCDCBOT</h1>
+        <p>Minecraft bot status monitor</p>
+      </div>
+
+    </div>
+
+    <div class="connection">
+
+      <span
+        id="socketDot"
+        class="dot"
+      ></span>
+
+      <span id="socketText">
+        Bağlanıyor...
+      </span>
+
+    </div>
+
+  </header>
+
+
+  <!-- TOP STATUS -->
+
+  <section class="grid">
+
+    <!-- MINECRAFT -->
+
+    <div class="card">
+
+      <div class="card-title">
+
+        <h2>Minecraft</h2>
+
+        <div class="status-label">
+
+          <span
+            id="mcDot"
+            class="dot"
+          ></span>
+
+          <span id="mcStatusSmall">
+            Offline
+          </span>
+
+        </div>
+
+      </div>
+
+      <div
+        id="mcStatus"
+        class="big-status offline-text"
+      >
+        OFFLINE
+      </div>
+
+      <div
+        id="mcServer"
+        class="sub"
+      >
+        —
+      </div>
+
+    </div>
+
+
+    <!-- DISCORD -->
+
+    <div class="card">
+
+      <div class="card-title">
+
+        <h2>Discord</h2>
+
+        <div class="status-label">
+
+          <span
+            id="discordDot"
+            class="dot"
+          ></span>
+
+          <span id="discordStatusSmall">
+            Offline
+          </span>
+
+        </div>
+
+      </div>
+
+      <div
+        id="discordStatus"
+        class="big-status offline-text"
+      >
+        OFFLINE
+      </div>
+
+      <div
+        id="discordUser"
+        class="sub"
+      >
+        —
+      </div>
+
+    </div>
+
+
+    <!-- PING -->
+
+    <div class="card">
+
+      <div class="card-title">
+
+        <h2>Ping</h2>
+
+      </div>
+
+      <div
+        id="ping"
+        class="big-status"
+      >
+        —
+      </div>
+
+      <div class="sub">
+        Minecraft bağlantısı
+      </div>
+
+    </div>
+
+
+    <!-- UPTIME -->
+
+    <div class="card">
+
+      <div class="card-title">
+
+        <h2>Uptime</h2>
+
+      </div>
+
+      <div
+        id="uptime"
+        class="big-status"
+      >
+        —
+      </div>
+
+      <div class="sub">
+        Sistem çalışma süresi
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- MAIN -->
+
+  <section class="main-grid">
+
+    <!-- LEFT -->
+
+    <div class="wide">
+
+      <!-- BOT STATS -->
+
+      <div class="card">
+
+        <div class="card-title">
+
+          <h2>Bot Durumu</h2>
+
+          <div
+            id="targetStatus"
+            class="status-label"
+          >
+            Hedef yok
+          </div>
+
+        </div>
+
+        <div class="stats">
+
+          <div class="stat">
+            <div class="stat-name">
+              Can
+            </div>
+
+            <div
+              id="health"
+              class="stat-value"
+            >
+              —
+            </div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-name">
+              Açlık
+            </div>
+
+            <div
+              id="food"
+              class="stat-value"
+            >
+              —
+            </div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-name">
+              Hedef Mesafesi
+            </div>
+
+            <div
+              id="targetDistance"
+              class="stat-value"
+            >
+              —
+            </div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-name">
+              Dünya
+            </div>
+
+            <div
+              id="world"
+              class="stat-value"
+            >
+              —
+            </div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-name">
+              X
+            </div>
+
+            <div
+              id="posX"
+              class="stat-value"
+            >
+              —
+            </div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-name">
+              Y / Z
+            </div>
+
+            <div
+              id="posYZ"
+              class="stat-value"
+            >
+              —
+            </div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-name">
+              Saldırı
+            </div>
+
+            <div
+              id="attack"
+              class="stat-value"
+            >
+              —
+            </div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-name">
+              Hareket
+            </div>
+
+            <div
+              id="movement"
+              class="stat-value"
+            >
+              —
+            </div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-name">
+              Bağlantı
+            </div>
+
+            <div
+              id="connectedAt"
+              class="stat-value"
+            >
+              —
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- HEALTH / FOOD -->
+
+      <div
+        class="card"
+        style="margin-top:15px;"
+      >
+
+        <div class="card-title">
+          <h2>Durum Göstergeleri</h2>
+        </div>
+
+        <div class="progress-row">
+
+          <div class="progress-head">
+
+            <span>Can</span>
+
+            <span id="healthText">
+              —
+            </span>
+
+          </div>
+
+          <div class="progress">
+
+            <div
+              id="healthBar"
+              class="progress-bar health"
+            ></div>
+
+          </div>
+
+        </div>
+
+
+        <div class="progress-row">
+
+          <div class="progress-head">
+
+            <span>Açlık</span>
+
+            <span id="foodText">
+              —
+            </span>
+
+          </div>
+
+          <div class="progress">
+
+            <div
+              id="foodBar"
+              class="progress-bar food"
+            ></div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- EQUIPMENT -->
+
+      <div
+        class="card"
+        style="margin-top:15px;"
+      >
+
+        <div class="card-title">
+
+          <h2>Ekipman</h2>
+
+        </div>
+
+        <div class="equipment">
+
+          <div class="equipment-item">
+
+            <div class="equipment-name">
+              Kılıç
+            </div>
+
+            <div
+              id="sword"
+              class="equipment-value"
+            >
+              —
+            </div>
+
+            <div
+              id="swordPercent"
+              class="equipment-percent"
+            >
+              —
+            </div>
+
+          </div>
+
+
+          <div class="equipment-item">
+
+            <div class="equipment-name">
+              Kask
+            </div>
+
+            <div
+              id="helmet"
+              class="equipment-value"
+            >
+              —
+            </div>
+
+            <div
+              id="helmetPercent"
+              class="equipment-percent"
+            >
+              —
+            </div>
+
+          </div>
+
+
+          <div class="equipment-item">
+
+            <div class="equipment-name">
+              Göğüslük
+            </div>
+
+            <div
+              id="chestplate"
+              class="equipment-value"
+            >
+              —
+            </div>
+
+            <div
+              id="chestplatePercent"
+              class="equipment-percent"
+            >
+              —
+            </div>
+
+          </div>
+
+
+          <div class="equipment-item">
+
+            <div class="equipment-name">
+              Pantolon
+            </div>
+
+            <div
+              id="leggings"
+              class="equipment-value"
+            >
+              —
+            </div>
+
+            <div
+              id="leggingsPercent"
+              class="equipment-percent"
+            >
+              —
+            </div>
+
+          </div>
+
+
+          <div class="equipment-item">
+
+            <div class="equipment-name">
+              Bot
+            </div>
+
+            <div
+              id="boots"
+              class="equipment-value"
+            >
+              —
+            </div>
+
+            <div
+              id="bootsPercent"
+              class="equipment-percent"
+            >
+              —
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- RIGHT -->
+
+    <div>
+
+      <!-- CHAT -->
+
+      <div class="card">
+
+        <div class="card-title">
+
+          <h2>Minecraft Chat</h2>
+
+          <div class="status-label">
+            Canlı
+          </div>
+
+        </div>
+
+        <div
+          id="chatFeed"
+          class="feed"
+        ></div>
+
+      </div>
+
+
+      <!-- LOGS -->
+
+      <div
+        class="card"
+        style="margin-top:15px;"
+      >
+
+        <div class="card-title">
+
+          <h2>Sistem Logları</h2>
+
+          <div class="status-label">
+            Canlı
+          </div>
+
+        </div>
+
+        <div
+          id="logFeed"
+          class="feed"
+        ></div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <footer>
+    MCDCBOT Status Panel · Read-only monitoring
+  </footer>
+
+</div>
+
+
+<script>
+  const socket = io();
+
+  // ============================================================
+  // HELPERS
+  // ============================================================
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function escapeHTML(value) {
+    if (value === null || value === undefined) {
+      return "";
+    }
+
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function formatUptime(ms) {
+    if (!ms || ms < 0) {
+      return "—";
+    }
+
+    let seconds =
+      Math.floor(ms / 1000);
+
+    const days =
+      Math.floor(seconds / 86400);
+
+    seconds %= 86400;
+
+    const hours =
+      Math.floor(seconds / 3600);
+
+    seconds %= 3600;
+
+    const minutes =
+      Math.floor(seconds / 60);
+
+    seconds %= 60;
+
+    if (days > 0) {
+      return `${days}g ${hours}s ${minutes}dk`;
+    }
+
+    if (hours > 0) {
+      return `${hours}s ${minutes}dk ${seconds}sn`;
+    }
+
+    if (minutes > 0) {
+      return `${minutes}dk ${seconds}sn`;
+    }
+
+    return `${seconds}sn`;
+  }
+
+  function formatTime(value) {
+    if (!value) {
+      return "—";
+    }
+
+    const date =
+      new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "—";
+    }
+
+    return date.toLocaleTimeString(
+      "tr-TR",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      }
+    );
+  }
+
+  function setDot(id, online) {
+    const element = $(id);
+
+    if (!element) {
+      return;
+    }
+
+    element.classList.toggle(
+      "online",
+      Boolean(online)
+    );
+  }
+
+  function setStatusText(
+    elementId,
+    smallId,
+    online
+  ) {
+    const element =
+      $(elementId);
+
+    const small =
+      $(smallId);
+
+    if (element) {
+      element.textContent =
+        online ? "ONLINE" : "OFFLINE";
+
+      element.classList.toggle(
+        "online-text",
+        Boolean(online)
+      );
+
+      element.classList.toggle(
+        "offline-text",
+        !online
+      );
+    }
+
+    if (small) {
+      small.textContent =
+        online ? "Online" : "Offline";
+    }
+  }
+
+  function setValue(id, value) {
+    const element = $(id);
+
+    if (!element) {
+      return;
+    }
+
+    element.textContent =
+      value === null ||
+      value === undefined ||
+      value === ""
+        ? "—"
+        : value;
+  }
+
+  // ============================================================
+  // SOCKET
+  // ============================================================
+
+  socket.on("connect", () => {
+
+    $("socketText").textContent =
+      "Canlı bağlantı";
+
+    setDot(
+      "socketDot",
+      true
+    );
+  });
+
+
+  socket.on("disconnect", () => {
+
+    $("socketText").textContent =
+      "Bağlantı kesildi";
+
+    setDot(
+      "socketDot",
+      false
+    );
+  });
+
+
+  socket.on("status", (data) => {
+    updateStatus(data);
+  });
+
+
+  socket.on("chat", (entry) => {
+    addChatEntry(entry);
+  });
+
+
+  socket.on("log", (entry) => {
+    addLogEntry(entry);
+  });
+
+  // ============================================================
+  // STATUS
+  // ============================================================
+
+  function updateStatus(data) {
+
+    if (!data) {
+      return;
+    }
+
+    const mc =
+      data.minecraft || {};
+
+    const discord =
+      data.discord || {};
+
+    // Minecraft
+
+    setStatusText(
+      "mcStatus",
+      "mcStatusSmall",
+      mc.online
+    );
+
+    setDot(
+      "mcDot",
+      mc.online
+    );
+
+    setValue(
+      "mcServer",
+      mc.host
+        ? `${mc.host}:${mc.port || 25565}`
+        : "—"
+    );
+
+
+    // Discord
+
+    setStatusText(
+      "discordStatus",
+      "discordStatusSmall",
+      discord.online
+    );
+
+    setDot(
+      "discordDot",
+      discord.online
+    );
+
+    setValue(
+      "discordUser",
+      discord.tag ||
+      discord.username ||
+      "—"
+    );
+
+
+    // Ping
+
+    setValue(
+      "ping",
+      mc.ping !== null &&
+      mc.ping !== undefined
+        ? `${mc.ping} ms`
+        : "—"
+    );
+
+
+    // Uptime
+
+    setValue(
+      "uptime",
+      formatUptime(data.uptime)
+    );
+
+
+    // Stats
+
+    setValue(
+      "health",
+      mc.health !== null &&
+      mc.health !== undefined
+        ? `${mc.health} / 20`
+        : "—"
+    );
+
+    setValue(
+      "food",
+      mc.food !== null &&
+      mc.food !== undefined
+        ? `${mc.food} / 20`
+        : "—"
+    );
+
+    setValue(
+      "targetDistance",
+      mc.targetDistance !== null &&
+      mc.targetDistance !== undefined
+        ? `${mc.targetDistance} blok`
+        : "—"
+    );
+
+    setValue(
+      "world",
+      mc.world
+    );
+
+    setValue(
+      "posX",
+      mc.x
+    );
+
+    setValue(
+      "posYZ",
+      mc.y !== null &&
+      mc.z !== null
+        ? `${mc.y} / ${mc.z}`
+        : "—"
+    );
+
+
+    setValue(
+      "attack",
+      mc.attacking
+        ? "Açık"
+        : "Kapalı"
+    );
+
+    setValue(
+      "movement",
+      mc.movement
+        ? "Açık"
+        : "Kapalı"
+    );
+
+    setValue(
+      "connectedAt",
+      formatTime(mc.connectedAt)
+    );
+
+
+    // Target
+
+    if (mc.target) {
+
+      $("targetStatus").textContent =
+        `Hedef: ${mc.target}`;
+
+    } else {
+
+      $("targetStatus").textContent =
+        "Hedef yok";
+
+    }
+
+
+    // Health bars
+
+    const health =
+      Number(mc.health);
+
+    const food =
+      Number(mc.food);
+
+    const healthPercent =
+      Number.isFinite(health)
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              (health / 20) * 100
+            )
+          )
+        : 0;
+
+    const foodPercent =
+      Number.isFinite(food)
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              (food / 20) * 100
+            )
+          )
+        : 0;
+
+
+    $("healthBar").style.width =
+      `${healthPercent}%`;
+
+    $("foodBar").style.width =
+      `${foodPercent}%`;
+
+    setValue(
+      "healthText",
+      Number.isFinite(health)
+        ? `${health} / 20`
+        : "—"
+    );
+
+    setValue(
+      "foodText",
+      Number.isFinite(food)
+        ? `${food} / 20`
+        : "—"
+    );
+
+
+    // Equipment
+
+    updateEquipment(
+      data.equipment || {}
+    );
+
+
+    // İlk yüklemede mevcut feed'leri oluştur.
+
+    if (
+      Array.isArray(data.chat) &&
+      !window.chatInitialized
+    ) {
+
+      window.chatInitialized = true;
+
+      $("chatFeed").innerHTML = "";
+
+      data.chat
+        .slice(-100)
+        .forEach(addChatEntry);
+    }
+
+
+    if (
+      Array.isArray(data.logs) &&
+      !window.logsInitialized
+    ) {
+
+      window.logsInitialized = true;
+
+      $("logFeed").innerHTML = "";
+
+      data.logs
+        .slice(-100)
+        .forEach(addLogEntry);
+    }
+
+  }
+
+  // ============================================================
+  // EQUIPMENT
+  // ============================================================
+
+  function updateEquipment(equipment) {
+
+    const items = [
+      ["sword", "Kılıç"],
+      ["helmet", "Kask"],
+      ["chestplate", "Göğüslük"],
+      ["leggings", "Pantolon"],
+      ["boots", "Bot"]
+    ];
+
+    for (const [key] of items) {
+
+      const item =
+        equipment[key];
+
+      const valueElement =
+        $(`${key}`);
+
+      const percentElement =
+        $(`${key}Percent`);
+
+      if (!item) {
+
+        valueElement.textContent =
+          "Yok";
+
+        percentElement.textContent =
+          "—";
+
+        continue;
+      }
+
+      valueElement.textContent =
+        item.name || "Bilinmeyen";
+
+      if (
+        item.percent !== null &&
+        item.percent !== undefined
+      ) {
+
+        percentElement.textContent =
+          `${item.percent}%`;
+
+      } else {
+
+        percentElement.textContent =
+          "Dayanıklılık yok";
+      }
+    }
+  }
+
+  // ============================================================
+  // CHAT
+  // ============================================================
+
+  function addChatEntry(entry) {
+
+    const feed =
+      $("chatFeed");
+
+    if (!feed) {
+      return;
+    }
+
+    const element =
+      document.createElement("div");
+
+    element.className =
+      "feed-item";
+
+    element.innerHTML = `
+      <div class="feed-time">
+        ${escapeHTML(formatTime(entry.time))}
+      </div>
+
+      <div class="feed-message">
+        <span class="feed-user">
+          ${escapeHTML(entry.username || "System")}:
+        </span>
+
+        ${escapeHTML(entry.message || "")}
+      </div>
+    `;
+
+    feed.appendChild(element);
+
+    while (feed.children.length > 100) {
+      feed.removeChild(
+        feed.firstElementChild
+      );
+    }
+
+    feed.scrollTop =
+      feed.scrollHeight;
+  }
+
+  // ============================================================
+  // LOGS
+  // ============================================================
+
+  function addLogEntry(entry) {
+
+    const feed =
+      $("logFeed");
+
+    if (!feed) {
+      return;
+    }
+
+    const element =
+      document.createElement("div");
+
+    element.className =
+      "feed-item";
+
+    const type =
+      entry.type || "info";
+
+    element.innerHTML = `
+      <div class="feed-time">
+        ${escapeHTML(formatTime(entry.time))}
+      </div>
+
+      <div class="feed-message log-${escapeHTML(type)}">
+        ${escapeHTML(entry.message || "")}
+      </div>
+    `;
+
+    feed.appendChild(element);
+
+    while (feed.children.length > 100) {
+      feed.removeChild(
+        feed.firstElementChild
+      );
+    }
+
+    feed.scrollTop =
+      feed.scrollHeight;
+  }
+
+  // ============================================================
+  // INITIAL API FALLBACK
+  // ============================================================
+
+  fetch("/api/status")
+    .then(response => response.json())
+    .then(data => {
+      updateStatus(data);
+    })
+    .catch(() => {
+      // Socket bağlantısı zaten varsa sorun yok.
+    });
+
+</script>
+
+</body>
+</html>
