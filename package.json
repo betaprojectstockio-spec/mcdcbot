@@ -1,7 +1,8 @@
 {
   "name": "minecraft-dungeon-bot",
   "version": "1.0.0",
-  "description": "Minecraft PvE dungeon bot with Discord control and web panel",
+  "private": true,
+  "description": "Minecraft PvE bot with Discord and read-only live status panel",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
@@ -11,9 +12,9 @@
   },
   "dependencies": {
     "discord.js": "^14.24.2",
-    "dotenv": "^18.0.4",
     "express": "^5.1.0",
     "mineflayer": "^4.32.0",
-    "mineflayer-pathfinder": "^2.4.5"
+    "mineflayer-pathfinder": "^2.4.5",
+    "socket.io": "^4.8.1"
   }
 }
