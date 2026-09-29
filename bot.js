@@ -611,30 +611,32 @@ mcBot.on("kicked", (reason) => {
   // SYSTEM MESSAGE
   // ----------------------------------------------------------
 
-  mcBot.on("message", (jsonMsg) => {
-    try {
-      const text =
-        jsonMsg.toString();
+mcBot.on("message", (jsonMsg) => {
+  try {
+    const text = jsonMsg.toString();
 
-      if (!text) {
-        return;
-      }
+    if (!text) {
+      return;
+    }
 
-      const lower =
-        text.toLowerCase();
+    addLog(
+      "Minecraft sistem mesajı: " +
+        text,
+      "system"
+    );
 
-      if (
-        lower.includes("teleport") ||
-        lower.includes("tpa")
-      ) {
-        addLog(
-          "Minecraft sistem mesajı: " +
-            text,
-          "system"
-        );
-      }
-    } catch {}
-  });
+    sendOwnerDM(
+      "Minecraft sistem mesajı:\n" +
+        text
+    );
+  } catch (error) {
+    addLog(
+      "Minecraft mesajı okunamadı: " +
+        error.message,
+      "error"
+    );
+  }
+});
 
   // ----------------------------------------------------------
   // HEALTH
