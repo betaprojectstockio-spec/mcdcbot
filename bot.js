@@ -8,9 +8,16 @@ import {
   Partials
 } from "discord.js";
 import mineflayer from "mineflayer";
-import { pathfinder, Movements, goals } from "mineflayer-pathfinder";
+import pathfinderPackage from "mineflayer-pathfinder";
+
+const {
+  pathfinder,
+  Movements,
+  goals
+} = pathfinderPackage;
 
 const { GoalNear } = goals;
+
 
 // ============================================================
 // CONFIG
