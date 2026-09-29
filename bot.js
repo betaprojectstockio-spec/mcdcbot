@@ -526,19 +526,35 @@ function setupMinecraftEvents() {
   // KICK
   // ----------------------------------------------------------
 
-  mcBot.on("kicked", (reason) => {
-    addLog(
-      "Minecraft botu atıldı: " +
-        String(reason),
-      "error"
-    );
+mcBot.on("kicked", (reason) => {
+  let kickReason = "";
 
-    sendOwnerDM(
-      "Minecraft botu sunucudan atıldı.\n" +
-        "Sebep: " +
-        String(reason)
-    );
-  });
+  try {
+    if (typeof reason === "string") {
+      kickReason = reason;
+    } else {
+      kickReason = JSON.stringify(
+        reason,
+        null,
+        2
+      );
+    }
+  } catch {
+    kickReason = String(reason);
+  }
+
+  addLog(
+    "Minecraft botu sunucudan atıldı. Sebep: " +
+      kickReason,
+    "error"
+  );
+
+  sendOwnerDM(
+    "Minecraft botu sunucudan atıldı.\n\n" +
+      "Sebep:\n" +
+      kickReason
+  );
+});
 
   // ----------------------------------------------------------
   // ERROR
